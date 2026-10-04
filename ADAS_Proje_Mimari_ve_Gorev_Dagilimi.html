@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>ADAS Karar Motoru - Proje Mimarisi ve Görev Dağılım Raporu</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1e293b;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+        .header {
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .header h1 {
+            font-size: 22pt;
+            color: #1e3a8a;
+            margin: 0;
+            font-weight: 800;
+        }
+        .header .subtitle {
+            font-size: 11pt;
+            color: #64748b;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .header .version-tag {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 10pt;
+            font-weight: 700;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 14pt;
+            color: #1e3a8a;
+            border-left: 4px solid #2563eb;
+            padding-left: 10px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        p {
+            font-size: 10pt;
+            margin-bottom: 10px;
+        }
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            font-size: 9.5pt;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 9px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 700;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .role-name {
+            font-weight: 700;
+            color: #1d4ed8;
+            font-size: 10pt;
+        }
+        .role-sub {
+            color: #64748b;
+            font-size: 8.5pt;
+            font-style: italic;
+        }
+        .file-badge {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background: #e2e8f0;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+            display: inline-block;
+            margin-bottom: 3px;
+        }
+        /* Folder Tree */
+        .tree-container {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 9pt;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        .tree-comment {
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        /* Roadmap */
+        .roadmap-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .roadmap-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            background: #f8fafc;
+        }
+        .roadmap-card h4 {
+            margin: 0 0 6px 0;
+            color: #2563eb;
+            font-size: 10.5pt;
+            font-weight: 700;
+        }
+        .roadmap-card p {
+            margin: 0;
+            font-size: 9pt;
+            color: #334155;
+        }
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 8.5pt;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>OTONOM ARAÇ SIL KARAR MOTORU</h1>
+            <div class="subtitle">Gelişmiş Sürücü Destek Sistemleri (ADAS) Mimari ve Görev Dağılım Raporu</div>
+        </div>
+        <div class="version-tag">Sürüm v2.0</div>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="section">
+        <div class="section-title">1. Proje Özeti ve Genel Mimari</div>
+        <p>
+            Bu proje, donanım bağımsız (Software-in-the-Loop) çalışan C++ tabanlı bir otonom sürüş karar motorudur. 
+            Sistem; çevresel verileri simüle eden, Adaptif Hız Sabitleyici (ACC), Acil Frenleme (AEB), Aktif Süspansiyon Yönetimi, 
+            Şerit Takip ve Hız Sınırı uyarılarını anlık olarak hesaplayan ve tüm bu verileri REST API/JSON aracılığıyla yapay zeka destekli 
+            bir web arayüzüne aktaran modüler bir mimariye sahiptir.
+        </p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="section">
+        <div class="section-title">2. Takım Rolleri ve Görev Dağılım Matrisi (4 Kişilik Ekip)</div>
+        <p>10 haftalık geliştirme sürecinde, 4 kişilik ekibin birbirini engellemeden paralel çalışabilmesi için görevler modüler olarak dağıtılmıştır:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Rol / Ekip Üyesi</th>
+                    <th style="width: 30%;">Sorumlu Olunan Dosyalar</th>
+                    <th style="width: 45%;">C++ & Geliştirme Odakları</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="role-name">1. Simülasyon Geliştirici</div>
+                        <div class="role-sub">(Data Generator)</div>
+                    </td>
+                    <td>
+                        <span class="file-badge">include/SensorSimulator.hpp</span><br>
+                        <span class="file-badge">src/SensorSimulator.cpp</span>
+                    </td>
+                    <td>
+                        Zamanlayıcı (timer) döngüsünü kurar ve <code>SensorSimulator</code> sınıfını yazar. 
+                        W tuşu (Gaz) girdisine göre araç hızını ivmelenme/sürtünme fiziğiyle hesaplar. 
+                        Yol anomalilerini (çukur/tümsek) ve hız tabelalarını rastgele ürettirir.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="role-name">2. Karar Algoritmacısı</div>
+                        <div class="role-sub">(Core Engine)</div>
+                    </td>
+                    <td>
+                        <span class="file-badge">include/AdasController.hpp</span><br>
+                        <span class="file-badge">src/AdasController.cpp</span>
+                    </td>
+                    <td>
+                        Fiziksel matematiği koda döker. <code>AdasController</code> sınıfında; 
+                        <strong>AEB & Override</strong> (15m kritik mesafe altı acil fren), 
+                        <strong>Akıllı Süspansiyon</strong> (Çukur -> %20 yumuşak, Tümsek -> %80 sert, t &lt; 1.5s), 
+                        <strong>TSR Hız Uyarısı</strong> ve <strong>Sinyal Kontrollü LDW (Bilinçli Sollama)</strong> State Machine'ini yazar.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="role-name">3. API & Ağ Sorumlusu</div>
+                        <div class="role-sub">(Network Integration)</div>
+                    </td>
+                    <td>
+                        <span class="file-badge">include/NetworkServer.hpp</span><br>
+                        <span class="file-badge">src/NetworkServer.cpp</span><br>
+                        <span class="file-badge">include/httplib.h</span><br>
+                        <span class="file-badge">include/json.hpp</span>
+                    </td>
+                    <td>
+                        <code>cpp-httplib</code> ve <code>nlohmann/json</code> başlık dosyalarını kullanarak C++ içinde yerel web sunucusu (localhost:8080) kurar. 
+                        Telemetri verilerini JSON'a çevirip dışarı açar (<code>GET /api/telemetry</code>). 
+                        Arayüzden gelen W tuşu ve Sinyal <code>POST</code> taleplerini karşılayarak 1. ve 2. kişiye aktarır.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="role-name">4. Sistem Entegratörü</div>
+                        <div class="role-sub">(AI & Frontend)</div>
+                    </td>
+                    <td>
+                        <span class="file-badge">web/index.html</span><br>
+                        <span class="file-badge">web/style.css</span><br>
+                        <span class="file-badge">web/app.js</span><br>
+                        <span class="file-badge">include/Logger.hpp</span><br>
+                        <span class="file-badge">src/Logger.cpp</span> | <span class="file-badge">src/main.cpp</span>
+                    </td>
+                    <td>
+                        Yapay Zeka (LLM) araçlarını yönlendirerek HTML/JS arayüzünü (Dashboard) ürettirir. 
+                        Arayüze klavye dinleyicisi (Event Listener) ekler. C++ tarafında <code>std::ofstream</code> ile 
+                        tüm kararların zaman damgalı olarak <code>system_log.txt</code> dosyasına yazılmasını sağlar.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="section">
+        <div class="section-title">3. Modüler Klasör ve Dosya Hiyerarşisi</div>
+        
+        <div class="tree-container">
+D:\ADAS-Kontrol-Motoru\<br>
+├── CMakeLists.txt                 <span class="tree-comment">&lt;-- Proje Derleme Dosyası</span><br>
+├── README.md                      <span class="tree-comment">&lt;-- Detaylı Görev Matrisi</span><br>
+├── include/                       <span class="tree-comment">&lt;-- C++ Başlık Dosyaları (Header)</span><br>
+│   ├── SensorSimulator.hpp        <span class="tree-comment">[Geliştirici 1]</span><br>
+│   ├── AdasController.hpp         <span class="tree-comment">[Geliştirici 2]</span><br>
+│   ├── NetworkServer.hpp          <span class="tree-comment">[Geliştirici 3]</span><br>
+│   ├── Logger.hpp                 <span class="tree-comment">[Geliştirici 4]</span><br>
+│   ├── httplib.h                  <span class="tree-comment">[Kütüphane - Geliştirici 3]</span><br>
+│   └── json.hpp                   <span class="tree-comment">[Kütüphane - Geliştirici 3]</span><br>
+├── src/                           <span class="tree-comment">&lt;-- C++ Kaynak Dosyaları (Source)</span><br>
+│   ├── SensorSimulator.cpp        <span class="tree-comment">[Geliştirici 1]</span><br>
+│   ├── AdasController.cpp         <span class="tree-comment">[Geliştirici 2]</span><br>
+│   ├── NetworkServer.cpp          <span class="tree-comment">[Geliştirici 3]</span><br>
+│   ├── Logger.cpp                 <span class="tree-comment">[Geliştirici 4]</span><br>
+│   └── main.cpp                   <span class="tree-comment">[Geliştirici 4]</span><br>
+└── web/                           <span class="tree-comment">&lt;-- Dashboard Görselleştirme [Geliştirici 4]</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── index.html<br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── style.css<br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── app.js
+        </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="section">
+        <div class="section-title">4. Proje Yol Haritası (10 Haftalık Süreç)</div>
+        
+        <div class="roadmap-grid">
+            <div class="roadmap-card">
+                <h4>Hafta 1-2: Altyapı</h4>
+                <p>Ortak C++ çalışma ortamının (VS Code, CMake) kurulması, GitHub entegrasyonu ve boş projenin derlenmesi.</p>
+            </div>
+            <div class="roadmap-card">
+                <h4>Hafta 3-5: Simülasyon ve Beyin</h4>
+                <p>Sensör simülasyonlarının ve AEB/ACC temel karar if/else bloklarının konsol üzerinde hatasız çalıştırılması.</p>
+            </div>
+            <div class="roadmap-card">
+                <h4>Hafta 6-8: Haberleşme</h4>
+                <p>HTTP API'nin projeye dahil edilmesi, verilerin JSON olarak yayınlanması ve dışarıdan POST komutu dinleme.</p>
+            </div>
+            <div class="roadmap-card">
+                <h4>Hafta 9-10: Entegrasyon</h4>
+                <p>Web arayüzünün API'ye bağlanması, süspansiyon/LDW testleri, loglama kontrolleri ve final sunumu.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Otonom Araç SIL Karar Motoru v2.0 - Mimari Rapor ve Görev Dağılım Belgesi
+    </div>
+
+</body>
+</html>

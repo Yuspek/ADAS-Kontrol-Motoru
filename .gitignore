@@ -1,0 +1,21 @@
+# Build Directories
+build/
+bin/
+out/
+.vs/
+.vscode/
+
+# Compiled Executables & Libraries
+*.exe
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+
+# Generated Logs
+system_log.txt
+
+# OS Files
+.DS_Store
+Thumbs.db
