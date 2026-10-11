@@ -20,7 +20,7 @@ struct TelemetryData {
     int speed_limit = 70;               // Okunan hız sınırı tabelası (50, 70, 90 km/s)
     double radar_distance = 50.0;       // Öndeki araca/engele olan radar mesafesi (m)
     
-    std::string obstacle_type = "Yok"; // "Yok", "Çukur", "Tümsek"
+    std::string obstacle_type = "Yok"; // "Yok", "Cukur", "Tumsek"
     double obstacle_distance = 100.0;   // Engelin mesafesi (m)
     double lane_offset = 0.0;           // Şerit sapma miktarı (m)
     

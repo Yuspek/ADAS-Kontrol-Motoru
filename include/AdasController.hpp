@@ -28,7 +28,7 @@ struct AdasDecisionState {
     
     bool ldw_warning = false;           // Şerit uyarısı var mı?
     bool ldw_suppressed = false;        // Sinyal sebebiyle uyarı bastırıldı mı?
-    std::string ldw_status_text = "Şerit Ortasında";
+    std::string ldw_status_text = "Serit Ortasinda";
 };
 
 class AdasController {

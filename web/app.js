@@ -241,11 +241,11 @@ elBtnRightSignal.addEventListener('click', () => {
 });
 
 elBtnSpawnPothole.addEventListener('click', () => {
-    sendControlCommand({ spawn_obstacle: 'Çukur' });
+    sendControlCommand({ spawn_obstacle: 'Cukur' });
 });
 
 elBtnSpawnBump.addEventListener('click', () => {
-    sendControlCommand({ spawn_obstacle: 'Tümsek' });
+    sendControlCommand({ spawn_obstacle: 'Tumsek' });
 });
 
 let currentLimitIdx = 1; // 70
