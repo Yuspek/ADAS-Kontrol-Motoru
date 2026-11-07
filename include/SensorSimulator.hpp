@@ -14,6 +14,7 @@
 
 #include <string>
 #include <mutex>
+#include <random>
 
 struct TelemetryData {
     double speed_kmh = 0.0;             // Aracın anlık hızı (km/s)
@@ -53,7 +54,14 @@ private:
     TelemetryData m_data;
     std::mutex m_mutex;
 
-    // TODO (Geliştirici 1): Rastgele olay üretimi için gerekli değişkenleri ekleyiniz.
+    // Rastgele olay üretimi ve zamanlayıcı değişkenleri
+    std::mt19937 m_rng;
+    double m_obstacleTimer = 0.0;
+    double m_nextObstacleInterval = 10.0;
+    double m_speedLimitTimer = 0.0;
+    double m_nextSpeedLimitInterval = 15.0;
+    double m_laneDriftTimer = 0.0;
+    double m_targetLaneDrift = 0.0;
 };
 
 #endif // SENSOR_SIMULATOR_HPP
