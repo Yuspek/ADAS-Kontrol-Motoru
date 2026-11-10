@@ -1,47 +1,55 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Otonom Araç SIL Karar Motoru - Dashboard</title>
-    <!-- Google Fonts -->
+
+    <title>ADAS SIL Karar Motoru</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div class="app-container">
-        <!-- Top Navigation Header -->
+
+        <!-- Üst kısım -->
         <header class="app-header">
             <div class="brand">
                 <div class="logo-icon"></div>
                 <div>
                     <h1>ADAS SIL KARAR MOTORU <span>v2.0</span></h1>
-                    <p class="subtitle">Otonom Sürüş Karar Destek Sistemleri Gösterge Paneli</p>
+                    <p class="subtitle">Otonom Sürüş Karar Destek Sistemi</p>
                 </div>
             </div>
+
             <div class="connection-status" id="connectionBadge">
                 <span class="pulse-dot"></span>
                 <span id="connectionText">BAĞLANTI BEKLENİYOR</span>
             </div>
         </header>
 
-        <!-- Main Dashboard Grid -->
+        <!-- Gösterge panelleri -->
         <main class="dashboard-grid">
-            
-            <!-- CARD 1: Speed & Speed Limit (TSR) -->
+
+            <!-- Hız ve trafik işareti -->
             <section class="card tsr-card">
                 <div class="card-header">
-                    <h2><span class="icon"> speedometer</span> HIZ & TRAFİK İŞARETİ (TSR)</h2>
+                    <h2><span class="icon">speedometer</span> HIZ VE TRAFİK İŞARETİ (TSR)</h2>
                     <span class="badge" id="speedBadge">NORMAL</span>
                 </div>
+
                 <div class="card-body speed-body">
                     <div class="gauge-container">
                         <div class="speed-digital">
                             <span id="speedVal">00.0</span>
-                            <span class="unit">KM/S</span>
+                            <span class="unit">KM/H</span>
                         </div>
+
                         <div class="speed-bar-outer">
                             <div class="speed-bar-inner" id="speedBar" style="width: 0%;"></div>
                         </div>
@@ -54,17 +62,19 @@
                         <span class="tsr-label">HIZ SINIRI</span>
                     </div>
                 </div>
+
                 <div class="warning-banner hidden" id="speedWarningBanner">
-                    HIZ SINIRI İHLALİ! (+<span id="overshootVal">0</span> KM/S)
+                    HIZ SINIRI AŞILDI! (+<span id="overshootVal">0</span> KM/H)
                 </div>
             </section>
 
-            <!-- CARD 2: AEB Radar & Driver Override -->
+            <!-- Çarpışma önleme sistemi -->
             <section class="card aeb-card">
                 <div class="card-header">
-                    <h2><span class="icon"> radar</span> AEB ÇARPIŞMA ÖNLEYİCİ</h2>
+                    <h2><span class="icon">radar</span> AEB ÇARPIŞMA ÖNLEME</h2>
                     <span class="badge" id="aebStatusBadge">GÜVENLİ</span>
                 </div>
+
                 <div class="card-body">
                     <div class="metric-row">
                         <div class="metric-box">
@@ -74,8 +84,9 @@
                                 <span class="unit">m</span>
                             </div>
                         </div>
+
                         <div class="metric-box">
-                            <span class="label">KRİTİK AEB EŞİĞİ</span>
+                            <span class="label">AEB KRİTİK MESAFESİ</span>
                             <div class="val-group">
                                 <span class="val">15.0</span>
                                 <span class="unit">m</span>
@@ -92,26 +103,29 @@
                     </div>
 
                     <div class="aeb-alert-banner hidden" id="aebAlert">
-                         OTONOM ACİL FREN (AEB) DEVREDE!
+                        ACİL FREN SİSTEMİ (AEB) DEVREDE!
                     </div>
+
                     <div class="override-alert-banner hidden" id="overrideAlert">
-                         SÜRÜCÜ GAZ KOMUTU EZİLDİ (MANUAL OVERRIDE)
+                        SÜRÜCÜNÜN GAZ KOMUTU ENGELLENDİ!
                     </div>
                 </div>
             </section>
 
-            <!-- CARD 3: Active Suspension System -->
+            <!-- Süspansiyon sistemi -->
             <section class="card suspension-card">
                 <div class="card-header">
                     <h2><span class="icon">tune</span> AKTİF SÜSPANSİYON</h2>
                     <span class="badge" id="suspBadge">STANDART</span>
                 </div>
+
                 <div class="card-body">
                     <div class="suspension-metrics">
                         <div class="susp-box">
                             <span class="label">YOL ENGELİ</span>
                             <span class="susp-val" id="obstacleTypeVal">Yok</span>
                         </div>
+
                         <div class="susp-box">
                             <span class="label">ENGEL MESAFESİ</span>
                             <span class="susp-val" id="obstacleDistVal">-- m</span>
@@ -124,9 +138,11 @@
                             <span>%50</span>
                             <span>%80 (Sert - Tümsek)</span>
                         </div>
+
                         <div class="stiffness-bar-outer">
                             <div class="stiffness-bar-inner" id="suspStiffnessBar" style="width: 50%;"></div>
                         </div>
+
                         <div class="stiffness-readout">
                             SERTLİK: <strong id="suspStiffnessPct">50%</strong>
                         </div>
@@ -134,19 +150,21 @@
                 </div>
             </section>
 
-            <!-- CARD 4: Lane Departure Warning & Signal (LDW) -->
+            <!-- Şerit takip sistemi -->
             <section class="card ldw-card">
                 <div class="card-header">
-                    <h2><span class="icon">alt_route</span> ŞERİT TAKİP & SİNYAL (LDW)</h2>
+                    <h2><span class="icon">alt_route</span> ŞERİT TAKİP VE SİNYAL (LDW)</h2>
                     <span class="badge" id="ldwBadge">ŞERİT İÇİ</span>
                 </div>
+
                 <div class="card-body">
                     <div class="signals-bar">
                         <button class="signal-btn" id="btnLeftSignal">
-                             SOL SİNYAL (A / Q)
+                            SOL SİNYAL (A / Q)
                         </button>
+
                         <button class="signal-btn" id="btnRightSignal">
-                            SAĞ SİNYAL (D / E) 
+                            SAĞ SİNYAL (D / E)
                         </button>
                     </div>
 
@@ -157,54 +175,75 @@
                     </div>
 
                     <div class="lane-readout">
-                        <span>ŞERİT SAPMA: <strong id="laneOffsetVal">0.00 m</strong></span>
+                        ŞERİT SAPMASI: <strong id="laneOffsetVal">0.00 m</strong>
                     </div>
 
                     <div class="ldw-banner warning hidden" id="ldwWarningBanner">
-                         ŞERİT İHLALİ UYARISI!
+                        ŞERİT İHLALİ UYARISI!
                     </div>
+
                     <div class="ldw-banner suppressed hidden" id="ldwSuppressedBanner">
-                         BİLİNÇLİ SOLLAMA (Sinyal Devrede - Yanlış Alarm Bastırıldı)
+                        SİNYAL AÇIK - ŞERİT DEĞİŞTİRİLİYOR
                     </div>
                 </div>
             </section>
 
         </main>
 
-        <!-- Interactive Control Panel & Simulation Deck -->
+        <!-- Kontrol paneli -->
         <section class="control-deck">
-            <div class="deck-title">SÜRÜCÜ & SİMÜLASYON KONTROL DEKİ</div>
+            <div class="deck-title">SÜRÜCÜ VE SİMÜLASYON KONTROL PANELİ</div>
+
             <div class="control-buttons">
                 <button class="ctrl-btn gas-btn" id="btnGas">
                     <span class="btn-icon"></span>
-                    <span class="btn-text">GAZ PEDALI (W Tuşuna Basılı Tut)</span>
+                    <span class="btn-text">GAZ PEDALI (W TUŞUNA BASILI TUT)</span>
                 </button>
 
                 <div class="btn-group">
-                    <button class="ctrl-btn action-btn" id="btnSpawnPothole"> Çukur Oluştur</button>
-                    <button class="ctrl-btn action-btn" id="btnSpawnBump"> Tümsek Oluştur</button>
-                    <button class="ctrl-btn action-btn" id="btnToggleSpeedLimit"> Sınır Değiştir</button>
-                    <button class="ctrl-btn reset-btn" id="btnReset"> Sıfırla</button>
+                    <button class="ctrl-btn action-btn" id="btnSpawnPothole">
+                        Çukur Oluştur
+                    </button>
+
+                    <button class="ctrl-btn action-btn" id="btnSpawnBump">
+                        Tümsek Oluştur
+                    </button>
+
+                    <button class="ctrl-btn action-btn" id="btnToggleSpeedLimit">
+                        Hız Sınırını Değiştir
+                    </button>
+
+                    <button class="ctrl-btn reset-btn" id="btnReset">
+                        Sıfırla
+                    </button>
                 </div>
             </div>
+
             <div class="keyboard-hints">
-                <span> Klavye Kısayolları: <strong>W</strong> (Gaz), <strong>A</strong> / <strong>D</strong> (Sinyaller), <strong>Uzspace</strong> (Fren)</span>
+                Klavye Kısayolları:
+                <strong>W</strong> (Gaz),
+                <strong>A / D</strong> (Sinyal),
+                <strong>SPACE</strong> (Fren)
             </div>
         </section>
 
-        <!-- Terminal Log Viewer -->
+        <!-- Sistem kayıtları -->
         <section class="terminal-card">
             <div class="terminal-header">
                 <span>SYSTEM_LOG.TXT CANLI AKIŞI</span>
                 <span class="terminal-dot"></span>
             </div>
+
             <div class="terminal-body" id="logTerminal">
-                <div class="log-line system">[SYSTEM] Karar motoru canlı akışı bekleniyor...</div>
+                <div class="log-line system">
+                    [SYSTEM] Karar motoru başlatılmayı bekliyor...
+                </div>
             </div>
         </section>
 
     </div>
 
     <script src="app.js"></script>
+
 </body>
 </html>
