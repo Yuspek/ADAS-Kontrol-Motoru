@@ -112,6 +112,50 @@
                 </div>
             </section>
 
+            <!-- Adaptif Hız Sabitleyici (ACC) -->
+            <section class="card acc-card">
+                <div class="card-header">
+                    <h2><span class="icon">tune</span> ADAPTİF HIZ SABİTLEYİCİ (ACC)</h2>
+                    <span class="badge" id="accStatusBadge">KAPALI</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="metric-row">
+                        <div class="metric-box">
+                            <span class="label">ACC HEDEF HIZ</span>
+                            <div class="val-group">
+                                <span class="val" id="accSetSpeedVal">70</span>
+                                <span class="unit">KM/H</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-box">
+                            <span class="label">GÜVENLİ TAKİP MESAFESİ</span>
+                            <div class="val-group">
+                                <span class="val" id="accSafeDistVal">37.0</span>
+                                <span class="unit">m</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="acc-mode-box">
+                        <span class="label">KONTROL DURUMU</span>
+                        <div class="acc-mode-text" id="accModeVal">KAPALI</div>
+                    </div>
+
+                    <div class="acc-demand-row">
+                        <div class="acc-demand-item">
+                            <span class="demand-label">OTONOM GAZ: <strong id="accThrottleVal">%0</strong></span>
+                            <div class="demand-bar-outer"><div class="demand-bar-inner gas" id="accThrottleBar" style="width: 0%;"></div></div>
+                        </div>
+                        <div class="acc-demand-item">
+                            <span class="demand-label">OTONOM FREN: <strong id="accBrakeVal">%0</strong></span>
+                            <div class="demand-bar-outer"><div class="demand-bar-inner brake" id="accBrakeBar" style="width: 0%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Süspansiyon sistemi -->
             <section class="card suspension-card">
                 <div class="card-header">
@@ -201,6 +245,11 @@
                 </button>
 
                 <div class="btn-group">
+                    <button class="ctrl-btn acc-toggle-btn" id="btnToggleAcc">
+                        ACC: KAPALI
+                    </button>
+                    <button class="ctrl-btn action-btn small-btn" id="btnAccDown">-5 km/s</button>
+                    <button class="ctrl-btn action-btn small-btn" id="btnAccUp">+5 km/s</button>
                     <button class="ctrl-btn action-btn" id="btnSpawnPothole">
                         Çukur Oluştur
                     </button>
@@ -223,7 +272,9 @@
                 Klavye Kısayolları:
                 <strong>W</strong> (Gaz),
                 <strong>A / D</strong> (Sinyal),
-                <strong>SPACE</strong> (Fren)
+                <strong>SPACE</strong> (Fren),
+                <strong>C</strong> (ACC Aç/Kapa),
+                <strong>+ / -</strong> (ACC Hız Ayarı)
             </div>
         </section>
 

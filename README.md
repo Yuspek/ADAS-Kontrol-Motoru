@@ -1,68 +1,168 @@
-# Otonom Araç SIL Karar Motoru (ADAS v2.0)
+# 🚗 Otonom Araç ADAS Karar ve Kontrol Motoru (v2.0)
 
-Bu proje, **Software-in-the-Loop (SIL)** konseptine uygun olarak 4 kişilik yazılım ekibinin paralel çalışabilmesi için tasarlanmış C++ tabanlı bir ADAS karar motoru ve canlı web gösterge paneli altyapısıdır.
+Modern otomotiv standartlarına ve **Software-in-the-Loop (SIL)** konseptine uygun olarak geliştirilmiş C++ tabanlı bir **ADAS (Gelişmiş Sürücü Destek Sistemleri)** karar motoru ve canlı web kokpit gösterge paneli altyapısıdır.
 
----
-
-## 👥 Takım Rolleri ve Görev Dağılımı (4 Kişilik Ekip)
-
-Projede herkes kendi klasör ve modülünden sorumludur. Aşağıdaki tabloya göre görev alanlarınızı belirleyiniz:
-
-| Ekip Üyesi / Rol | Sorumlu Olunan Kodlar & Klasörler | Görev ve Odak Alanları |
-| :--- | :--- | :--- |
-| **1. Simülasyon Geliştirici**<br>*(Data Generator)* | `include/SensorSimulator.hpp`<br>`src/SensorSimulator.cpp` | • Zamanlayıcı (timer) döngüsünü kurar.<br>• `SensorSimulator` sınıfını yazar.<br>• W tuşu (Gaz) girdisine göre araç hızını ivmelenme/sürtünme fiziğiyle hesaplar.<br>• Yol anomalilerini (çukur/tümsek) ve hız tabelalarını rastgele ürettirir. |
-| **2. Karar Algoritmacısı**<br>*(Core Engine)* | `include/AdasController.hpp`<br>`src/AdasController.cpp` | • Fiziksel matematiği koda döker.<br>• Engele ulaşma süresini hesaplayan **Akıllı Süspansiyon** mantığını yazar (Çukur -> %20 yumuşak, Tümsek -> %80 sert, \(t < 1.5s\)).<br>• W tuşunun ezilip acil fren (**AEB & Override**) yapılması gereken `if/else` koşullarını yazar.<br>• Sinyal verildiğinde şerit uyarısını bastıran (**Sinyal Kontrollü LDW - Bilinçli Sollama**) State Machine'i geliştirir. |
-| **3. API & Ağ Sorumlusu**<br>*(Network Integration)* | `include/NetworkServer.hpp`<br>`src/NetworkServer.cpp`<br>`include/httplib.h`<br>`include/json.hpp` | • `cpp-httplib` ve `nlohmann/json` başlık dosyalarını kullanarak C++ içinde yerel web sunucusu (localhost:8080) kurar.<br>• Telemetri verilerini JSON'a çevirip dışarı açar (`GET /api/telemetry`).<br>• Arayüzden gelen W tuşu ve Sinyal `POST` taleplerini karşılayıp 1. ve 2. kişinin algoritmalarına iletir. |
-| **4. Sistem Entegratörü**<br>*(AI & Frontend)* | `web/index.html`<br>`web/style.css`<br>`web/app.js`<br>`include/Logger.hpp`<br>`src/Logger.cpp`<br>`src/main.cpp` | • Yapay Zeka (LLM) araçlarını yönlendirerek HTML/JS Dashboard arayüzünü geliştirir.<br>• Arayüze Event Listener ekleyerek klavye girdilerinin C++ sunucusuna iletilmesini sağlar.<br>• C++ tarafında `std::ofstream` kütüphanesiyle tüm kararların zaman damgalı `system_log.txt` dosyasına yazdırılmasından sorumludur. |
+Proje; bağımsız karar çekirdeği, donanım/simülasyon soyutlama katmanı (HAL/SAL) ve canlı telemetri akışı sayesinde hem **Web Simülasyonu** üzerinde hem de gelecekteki **Robotik Simülasyon (NVIDIA Isaac Sim / CARLA / ROS 2)** ve **Gerçek Araç (CAN-Bus / ECU)** ortamlarında doğrudan çalışabilecek esnek bir mimariye sahiptir.
 
 ---
 
-## 📁 Mimari Klasör Yapısı
+## 🌟 Öne Çıkan ADAS Yetenekleri
+
+Sistem, aracın çevresel sensör verilerini gerçek zamanlı (20 Hz) işleyerek aşağıdaki 5 temel güvenlik ve konfor fonksiyonunu yerine getirir:
+
+### 1. ⚡ ACC (Adaptif Hız Sabitleyici)
+* **Hız Sabitleme Modu:** Ön yol boşken aracı sürücünün belirlediği hedef hıza (örn. 70 km/s) otonom olarak ivmelendirir ve sabit tutar.
+* **Mesafe Takip Modu:** Radarda öndeki lider araç algılandığında dinamik güvenli takip mesafesini ($d_{\text{safe}} = 10\text{ m} + v \times 1.4\text{ s}$) hesaplar. Öndeki aracın hızına uyum sağlar, gerektiğinde yumuşak frenleme yapar.
+* **Sürücü Önceliği:** Sürücü frene (`SPACE`) dokunduğu anda güvenlik gereği ACC otomatik olarak devreden çıkar.
+
+### 2. 🛑 AEB (Otomatik Acil Frenleme) & Manual Override
+* Öndeki araca kritik yaklaşma ($d \le 15\text{ m}$) veya çarpışma süresi riski ($\text{TTC} \le 1.5\text{ s}$) oluştuğunda %100 acil fren basıncı uygular.
+* **Sürücüyü Ezme (Manual Override):** Acil fren anında sürücü gaza basmaya devam etse dahi gaz komutu baskılanır ve kaza önlenir.
+
+### 3. 🛡️ Akıllı / Aktif Süspansiyon Yönetimi
+* Yoldaki çukur ve tümsek gibi yol anomalilerini önceden radar/kamera ile tespit eder.
+* Engele varış süresi 1.5 saniyenin altına indiğinde:
+  - **Çukur:** Şasi konforu ve darbe emilimi için süspansiyon **%20 (Yumuşak)** moduna alınır.
+  - **Tümsek:** Gövde salınımını önlemek için süspansiyon **%80 (Sert)** moduna alınır.
+  - Engel geçildiğinde süspansiyon tekrar **%50 (Normal)** seviyesine döner.
+
+### 4. 🪧 TSR (Trafik İşareti Tanıma & Hız Uyarısı)
+* Yol kenarındaki hız tabelalarını (50, 70, 90 km/s) anlık okur.
+* Araç hızı sınırı %10 aştığında kokpitte görsel ve sesli **Hız İhlali** uyarısı üretir ve aşım miktarını hesaplar.
+
+### 5. 🛣️ LDW (Şerit Takip ve Bilinçli Sollama)
+* Rüzgar veya yol eğimi sebebiyle şerit dışına kaymalarda (sapma > $\pm 0.5\text{ m}$) sürücüyü sesli/görsel olarak uyarır.
+* **Bilinçli Sollama (State Machine):** Sürücü ilgili yöne sinyal verdiyse, bu manevra bilinçli kabul edilir ve şerit ihlal uyarısı otomatik olarak bastırılır.
+
+---
+
+## 🏛️ Geleceğe Uyumlu Sistem Mimarisi
+
+Karar motorunun ortamdan bağımsız çalışabilmesi için **3 Katmanlı Mimari** uygulanmıştır:
+
+```mermaid
+flowchart TD
+    subgraph SOURCES["1. Veri Kaynakları (Sensör Katmanı)"]
+        S1["Web SIL Simülatörü\n(Mevcut)"]
+        S2["NVIDIA Isaac Sim / CARLA\n(ROS 2 / DDS Köprüsü)"]
+        S3["Gerçek Araç Sensörleri\n(CAN-Bus / Radar / Kamera)"]
+    end
+
+    subgraph SAL["Sensör Soyutlama Katmanı (SAL)"]
+        SAL_DATA["Standart TelemetryData Paketi\n(Hız, Radar Mesafesi, Şerit Sapması, Anomaliler)"]
+    end
+
+    subgraph CORE["2. Merkezi ADAS Karar Motoru (AdasController)"]
+        ALGO["Saf C++ Karar Algoritmaları (Pure Logic)\n• ACC Takip Fiziği\n• AEB & Manual Override\n• Akıllı Süspansiyon\n• TSR & LDW"]
+    end
+
+    subgraph HAL["Aktüatör Soyutlama Katmanı (HAL)"]
+        HAL_CMD["Standart ActuatorCommand Paketi\n(Fren Basıncı, Gaz Kesme, Otonom Gaz, Süspansiyon)"]
+    end
+
+    subgraph ACTUATORS["3. Eyleyiciler (Uygulama Alanı)"]
+        A1["Web SIL Araç Dinamiği"]
+        A2["Isaac Sim Araç Aktüatörleri"]
+        A3["Gerçek Araç Fren/Gaz ECU (CAN Mesajı)"]
+    end
+
+    S1 --> SAL_DATA
+    S2 --> SAL_DATA
+    S3 --> SAL_DATA
+
+    SAL_DATA --> ALGO
+    ALGO --> HAL_CMD
+
+    HAL_CMD --> A1
+    HAL_CMD --> A2
+    HAL_CMD --> A3
+```
+
+* **Bağımsız Karar Motoru (`AdasController`):** Hiçbir somut donanıma veya simülatör sınıfına doğrudan bağlı değildir. Sadece `TelemetryData` okur ve `ActuatorCommand` üretir.
+* **Soyutlama Arayüzleri (`VehicleInterfaces.hpp`):** `IVehiclePlatform`, `ISensorSource` ve `IActuatorSink` arayüzleri sayesinde tek satır karar kodu değiştirmeden farklı ortamlara (Web $\rightarrow$ Isaac Sim $\rightarrow$ Gerçek Araç) geçiş yapılabilir.
+
+---
+
+## 📁 Proje Dizin Yapısı
 
 ```text
-D:\ADAS-Kontrol-Motoru\
-├── CMakeLists.txt                 <- Proje derleme dosyası
-├── README.md                      <- Proje ve Görev Dağılım Raporu
-├── .gitignore
+ADAS-Kontrol-Motoru/
+├── CMakeLists.txt                 <- Modern CMake derleme dosyası
+├── README.md                      <- Proje dokümantasyonu ve mimari rehber
+├── .gitignore                     <- Git yoksayma kuralları
+├── docs/                          <- Ek dokümantasyon ve mimari raporlar
 ├── include/                       <- C++ Başlık Dosyaları (Header)
-│   ├── SensorSimulator.hpp        [Geliştirici 1]
-│   ├── AdasController.hpp         [Geliştirici 2]
-│   ├── NetworkServer.hpp          [Geliştirici 3]
-│   ├── Logger.hpp                 [Geliştirici 4]
-│   ├── httplib.h                  [Kütüphane - Geliştirici 3]
-│   └── json.hpp                   [Kütüphane - Geliştirici 3]
+│   ├── VehicleInterfaces.hpp      <- HAL / SAL Soyutlama Arayüzleri
+│   ├── AdasController.hpp         <- ADAS Karar Motoru Tanımı
+│   ├── SensorSimulator.hpp        <- SIL Simülatör ve Araç Fiziği
+│   ├── NetworkServer.hpp          <- Gömülü HTTP & REST API Sunucusu
+│   ├── Logger.hpp                 <- Thread-safe Günlük Kayıt Sistemi
+│   ├── httplib.h                  <- cpp-httplib HTTP Kütüphanesi
+│   └── json.hpp                   <- nlohmann/json JSON Kütüphanesi
 ├── src/                           <- C++ Kaynak Dosyaları (Source)
-│   ├── SensorSimulator.cpp        [Geliştirici 1]
-│   ├── AdasController.cpp         [Geliştirici 2]
-│   ├── NetworkServer.cpp          [Geliştirici 3]
-│   ├── Logger.cpp                 [Geliştirici 4]
-│   └── main.cpp                   [Geliştirici 4]
-└── web/                           <- Arayüz & Görselleştirme [Geliştirici 4]
-    ├── index.html
-    ├── style.css
-    └── app.js
+│   ├── AdasController.cpp         <- ADAS Karar ve ACC/AEB Mantığı
+│   ├── SensorSimulator.cpp        <- Fizik Motoru ve Sensör Üretimi
+│   ├── NetworkServer.cpp          <- API Uç Noktaları ve JSON Köprüsü
+│   ├── Logger.cpp                 <- Loglama İşleyicisi (system_log.txt)
+│   └── main.cpp                   <- Simülasyon Ana Döngüsü (20 Hz)
+└── web/                           <- Canlı Web Dashboard Arayüzü
+    ├── index.html                 <- Gösterge Paneli ve Kontrol Masası
+    ├── style.css                  <- Siber-Kokpit Arayüz Tasarımı
+    └── app.js                     <- Canlı Telemetri ve Girdi Dinleyicisi
 ```
 
 ---
 
-## 🗺️ 10 Haftalık Proje Yol Haritası
+## 🛠️ Derleme ve Çalıştırma
 
-- **Hafta 1-2 (Altyapı)**: Ortak C++ çalışma ortamının kurulması, GitHub entegrasyonu ve boş projenin derlenmesi.
-- **Hafta 3-5 (Simülasyon ve Beyin)**: Sensör simülasyonlarının (`SensorSimulator`) ve AEB/ACC temel karar `if/else` bloklarının (`AdasController`) konsol üzerinde hatasız çalıştırılması.
-- **Hafta 6-8 (Haberleşme)**: HTTP API'nin projeye dahil edilmesi (`NetworkServer`), verilerin JSON olarak yayınlanması ve dışarıdan POST komutu dinleme (W tuşu hazırlığı).
-- **Hafta 9-10 (Entegrasyon)**: Yapay zeka ile üretilen web arayüzünün API'ye bağlanması, süspansiyon ve LDW testleri, loglama kontrolleri (`system_log.txt`), hata ayıklama ve final sunumu.
+### Gereksinimler
+* C++17 destekli bir derleyici (MSVC 2019+, GCC 9+ veya Clang 10+)
+* CMake (Sürüm 3.14 veya üzeri)
 
----
-
-## 🛠 Derleme ve Çalıştırma Instructions
-
+### Adım Adım Kurulum
 ```bash
-# Projeyi derlemek için:
+# 1. Proje kök dizininde build klasörü oluşturun
 mkdir build
 cd build
+
+# 2. CMake yapılandırmasını oluşturun
 cmake ..
+
+# 3. Projeyi Release modunda derleyin
 cmake --build . --config Release
 
-# Çalıştırmak için:
-./Release/AdasDecisionEngine.exe
+# 4. Uygulamayı başlatın
+./Release/AdasDecisionEngine.exe   # Windows
 ```
+
+Uygulama başladığında gömülü HTTP sunucusu **`http://localhost:8080`** portunda yayına başlar.
+
+---
+
+## 🎮 Canlı Web Kokpit Kullanımı
+
+Sunucu çalışırken tarayıcınızdan **`http://localhost:8080`** adresine giderek kokpiti canlı kullanabilirsiniz.
+
+### Klavye Kısayolları
+
+| Tuş | Fonksiyon | Açıklama |
+| :---: | :--- | :--- |
+| **`W`** veya **`↑`** | Gaz Pedalı | Basılı tutulduğunda araç hızlanır. |
+| **`SPACE`** | Fren Pedalı | Aracı yavaşlatır; basıldığında ACC devreden çıkar. |
+| **`C`** | ACC Aç / Kapat | Adaptif Hız Sabitleyiciyi devreye alır veya kapatır. |
+| **`+`** / **`-`** | ACC Hız Ayarı | ACC hedef hızını 5 km/s artırır veya azaltır. |
+| **`A`** / **`Q`** | Sol Sinyal | Sol şerit ihlali uyarısını bilinçli sollamaya çevirir. |
+| **`D`** / **`E`** | Sağ Sinyal | Sağ şerit ihlali uyarısını bilinçli sollamaya çevirir. |
+
+### Ekrandaki İnteraktif Butonlar
+* **Çukur / Tümsek Oluştur:** Test amaçlı yola anlık olarak 40 metre ileride engel yerleştirir.
+* **Hız Sınırını Değiştir:** Hız tabelasını döngüsel olarak (50 $\rightarrow$ 70 $\rightarrow$ 90 km/s) değiştirir.
+* **Sıfırla:** Simülasyonu ilk fabrika başlangıç değerlerine döndürür.
+
+---
+
+## 📝 Sistem Kayıtları (Logging)
+
+Tüm sistem kararları, sensör olayları, AEB devreye giriş anları ve durum geçişleri:
+1. Web arayüzündeki **Terminal Akışı** paneline canlı olarak yansıtılır.
+2. Proje dizinindeki **`system_log.txt`** dosyasına zaman damgalı ve thread-safe biçimde kaydedilir.

@@ -19,6 +19,11 @@ set(SOURCES
 # Çalıştırılabilir Hedef
 add_executable(AdasDecisionEngine ${SOURCES})
 
+# MSVC MSBuild FileTracker hatasını önlemek için dosya izlemeyi devre dışı bırak
+if(MSVC)
+    set_target_properties(AdasDecisionEngine PROPERTIES VS_GLOBAL_TrackFileAccess "false")
+endif()
+
 # Windows Socket Kütüphaneleri (cpp-httplib için gereklidir)
 if(WIN32)
     target_link_libraries(AdasDecisionEngine PRIVATE ws2_32 iphlpapi)

@@ -30,12 +30,18 @@ Logger::~Logger() {
 void Logger::log(const std::string& level, const std::string& message) {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // Zaman damgası üretimi
+    // Zaman damgası üretimi (Thread-safe ve çoklu platform uyumlu)
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::tm timeInfo{};
+#if defined(_WIN32)
+    localtime_s(&timeInfo, &in_time_t);
+#else
+    localtime_r(&in_time_t, &timeInfo);
+#endif
 
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
+    ss << std::put_time(&timeInfo, "%Y-%m-%d %H:%M:%S");
 
     std::string formattedLog = "[" + ss.str() + "] [" + level + "] " + message;
 

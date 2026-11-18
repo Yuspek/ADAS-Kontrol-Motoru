@@ -32,8 +32,15 @@ void SensorSimulator::resetState() {
     m_data.left_signal = false;
     m_data.right_signal = false;
 
+    // ACC Durumlarının sıfırlanması
+    m_data.acc_enabled = false;
+    m_data.acc_set_speed = 70.0;
+    m_accThrottleDemand = 0.0;
+    m_accBrakeDemand = 0.0;
+
     // Zamanlayıcıların sıfırlanması
     m_leadCarSpeed = 35.0;
+    m_data.lead_car_speed_kmh = m_leadCarSpeed;
     m_obstacleTimer = 0.0;
     m_nextObstacleInterval = 8.0;
     m_speedLimitTimer = 0.0;
@@ -66,6 +73,14 @@ void SensorSimulator::update(double dt_seconds) {
     } else if (m_data.is_gas_pressed) {
         // Gaz (W) basılıysa aracı hızlandır (v = v0 + a * t)
         m_data.speed_kmh += GAZ_IVMESI * dt_seconds;
+    } else if (m_data.acc_enabled && (m_accBrakeDemand > 0.0 || m_accThrottleDemand > 0.0)) {
+        // ACC Otonom Hız Kontrolü (Gaz ve Fren talepleri)
+        if (m_accBrakeDemand > 0.0) {
+            m_data.speed_kmh -= (FREN_IVMESI * m_accBrakeDemand) * dt_seconds;
+            if (m_data.speed_kmh < 0.0) m_data.speed_kmh = 0.0;
+        } else if (m_accThrottleDemand > 0.0) {
+            m_data.speed_kmh += (GAZ_IVMESI * m_accThrottleDemand) * dt_seconds;
+        }
     } else {
         // Gaz ve fren basılı değilse sürtünme ve motor freni ile yavaşlat
         // Yüksek hızlarda hava direnci etkisiyle biraz daha fazla yavaşlar
@@ -110,6 +125,7 @@ void SensorSimulator::update(double dt_seconds) {
 
         m_data.radar_distance = yeniMesafe(m_rng);
         m_leadCarSpeed = yeniOndekiHiz(m_rng);
+        m_data.lead_car_speed_kmh = m_leadCarSpeed;
         m_data.is_brake_pressed = false;
 
         Logger::getInstance().log("SENSOR", "Radar: Yeni on arac algilandi (" + 
@@ -249,6 +265,18 @@ TelemetryData SensorSimulator::getData() {
     return m_data;
 }
 
+void SensorSimulator::applyActuatorCommand(const ActuatorCommand& command) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (command.aeb_brake_active) {
+        m_data.is_brake_pressed = true;
+    }
+    if (command.throttle_override) {
+        m_data.is_gas_pressed = false;
+    }
+    m_accThrottleDemand = command.acc_throttle_demand;
+    m_accBrakeDemand = command.acc_brake_demand;
+}
+
 void SensorSimulator::setGasPressed(bool pressed) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_data.is_gas_pressed = pressed;
@@ -261,6 +289,30 @@ void SensorSimulator::setGasPressed(bool pressed) {
 void SensorSimulator::setBrakePressed(bool pressed) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_data.is_brake_pressed = pressed;
+    // Sürücü frene basarsa ACC güvenlik için devreden çıkar
+    if (pressed) {
+        m_data.acc_enabled = false;
+        m_accThrottleDemand = 0.0;
+        m_accBrakeDemand = 0.0;
+    }
+}
+
+void SensorSimulator::setAccEnabled(bool enabled) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_data.acc_enabled = enabled;
+    if (!enabled) {
+        m_accThrottleDemand = 0.0;
+        m_accBrakeDemand = 0.0;
+    }
+    Logger::getInstance().log("SENSOR", "ACC Durumu Guncellendi: " + std::string(enabled ? "Aktif" : "Pasif"));
+}
+
+void SensorSimulator::setAccSetSpeed(double speed) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (speed < 30.0) speed = 30.0;
+    if (speed > 130.0) speed = 130.0;
+    m_data.acc_set_speed = speed;
+    Logger::getInstance().log("SENSOR", "ACC Hedef Hizi Ayarlandi: " + std::to_string(static_cast<int>(speed)) + " km/s");
 }
 
 void SensorSimulator::setLeftSignal(bool active) {

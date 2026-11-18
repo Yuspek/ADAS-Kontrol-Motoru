@@ -1,9 +1,13 @@
 // ADAS Karar Motoru Web Dashboard Logic (10 Hz Polling & Driver Inputs)
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+    ? `${window.location.origin}/api`
+    : 'http://localhost:8080/api';
 let isGasPressed = false;
 let leftSignalActive = false;
 let rightSignalActive = false;
+let accEnabled = false;
+let accSetSpeed = 70;
 
 // DOM Elemanları
 const elConnectionText = document.getElementById('connectionText');
@@ -24,6 +28,19 @@ const elAebStatusBadge = document.getElementById('aebStatusBadge');
 const elRadarLine = document.getElementById('radarLine');
 const elAebAlert = document.getElementById('aebAlert');
 const elOverrideAlert = document.getElementById('overrideAlert');
+
+// ACC (Adaptif Hız Sabitleyici)
+const elAccStatusBadge = document.getElementById('accStatusBadge');
+const elAccSetSpeedVal = document.getElementById('accSetSpeedVal');
+const elAccSafeDistVal = document.getElementById('accSafeDistVal');
+const elAccModeVal = document.getElementById('accModeVal');
+const elAccThrottleVal = document.getElementById('accThrottleVal');
+const elAccThrottleBar = document.getElementById('accThrottleBar');
+const elAccBrakeVal = document.getElementById('accBrakeVal');
+const elAccBrakeBar = document.getElementById('accBrakeBar');
+const elBtnToggleAcc = document.getElementById('btnToggleAcc');
+const elBtnAccDown = document.getElementById('btnAccDown');
+const elBtnAccUp = document.getElementById('btnAccUp');
 
 // Süspansiyon
 const elSuspBadge = document.getElementById('suspBadge');
@@ -83,8 +100,8 @@ async function fetchTelemetry() {
 
 // Arayüzü Güncelleme Mantığı
 function updateUI(data) {
-    const sensor = data.sensor;
-    const adas = data.adas;
+    const sensor = data.sensor || data;
+    const adas = data.adas || data;
     const logs = data.logs || [];
 
     // 1. Hız ve TSR Güncelleme
@@ -129,7 +146,46 @@ function updateUI(data) {
         elOverrideAlert.classList.add('hidden');
     }
 
-    // 3. Aktif Süspansiyon Güncelleme
+    // 3. ACC (Adaptif Hız Sabitleyici) Güncelleme
+    accEnabled = sensor.acc_enabled || false;
+    accSetSpeed = sensor.acc_set_speed || 70;
+    if (elAccSetSpeedVal) elAccSetSpeedVal.innerText = Math.round(accSetSpeed);
+    if (elAccSafeDistVal) elAccSafeDistVal.innerText = (adas.acc_safe_distance ? adas.acc_safe_distance.toFixed(1) : '--');
+    if (elAccModeVal) elAccModeVal.innerText = adas.acc_mode || 'Kapali';
+
+    if (elAccStatusBadge) {
+        if (!accEnabled) {
+            elAccStatusBadge.innerText = 'KAPALI';
+            elAccStatusBadge.style.background = 'rgba(255, 255, 255, 0.1)';
+            elAccStatusBadge.style.color = '#cbd5e1';
+        } else if (adas.acc_mode === 'Mesafe Takibi') {
+            elAccStatusBadge.innerText = 'MESAFE TAKİBİ';
+            elAccStatusBadge.style.background = 'rgba(245, 158, 11, 0.25)';
+            elAccStatusBadge.style.color = '#fbbf24';
+        } else if (adas.acc_mode === 'Hiz Sabitleme') {
+            elAccStatusBadge.innerText = 'HIZ SABİTLEME';
+            elAccStatusBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+            elAccStatusBadge.style.color = '#10b981';
+        } else {
+            elAccStatusBadge.innerText = adas.acc_mode ? adas.acc_mode.toUpperCase() : 'AKTİF';
+            elAccStatusBadge.style.background = 'rgba(59, 130, 246, 0.25)';
+            elAccStatusBadge.style.color = '#60a5fa';
+        }
+    }
+
+    if (elBtnToggleAcc) {
+        elBtnToggleAcc.innerText = accEnabled ? 'ACC: AKTİF' : 'ACC: KAPALI';
+        elBtnToggleAcc.classList.toggle('active', accEnabled);
+    }
+
+    const throttlePct = Math.round((adas.acc_throttle_demand || 0) * 100);
+    const brakePct = Math.round((adas.acc_brake_demand || 0) * 100);
+    if (elAccThrottleVal) elAccThrottleVal.innerText = `%${throttlePct}`;
+    if (elAccThrottleBar) elAccThrottleBar.style.width = `${throttlePct}%`;
+    if (elAccBrakeVal) elAccBrakeVal.innerText = `%${brakePct}`;
+    if (elAccBrakeBar) elAccBrakeBar.style.width = `${brakePct}%`;
+
+    // 4. Aktif Süspansiyon Güncelleme
     elObstacleTypeVal.innerText = sensor.obstacle_type;
     elObstacleDistVal.innerText = (sensor.obstacle_type !== 'Yok') ? `${sensor.obstacle_distance.toFixed(1)} m` : '-- m';
     
@@ -184,7 +240,7 @@ function updateLogs(logs) {
         div.className = 'log-line';
         if (log.includes('KRİTİK') || log.includes('HIZ İHLALİ') || log.includes('ŞERİT İHLALİ')) {
             div.classList.add('critical');
-        } else if (log.includes('Algılandı') || log.includes('Sertliği')) {
+        } else if (log.includes('Algılandı') || log.includes('Algilandi') || log.includes('Sertliği') || log.includes('Olusturuldu')) {
             div.classList.add('warning');
         } else {
             div.classList.add('info');
@@ -214,6 +270,14 @@ window.addEventListener('keydown', (e) => {
         sendControlCommand({ left_signal: !leftSignalActive });
     } else if (e.key === 'd' || e.key === 'D' || e.key === 'e' || e.key === 'E') {
         sendControlCommand({ right_signal: !rightSignalActive });
+    } else if (e.key === 'c' || e.key === 'C') {
+        sendControlCommand({ acc_enabled: !accEnabled });
+    } else if (e.key === '+' || e.key === '=') {
+        const nextSpd = Math.min(130, accSetSpeed + 5);
+        sendControlCommand({ acc_set_speed: nextSpd });
+    } else if (e.key === '-' || e.key === '_') {
+        const nextSpd = Math.max(30, accSetSpeed - 5);
+        sendControlCommand({ acc_set_speed: nextSpd });
     }
 });
 
@@ -243,6 +307,26 @@ elBtnRightSignal.addEventListener('click', () => {
 elBtnSpawnPothole.addEventListener('click', () => {
     sendControlCommand({ spawn_obstacle: 'Cukur' });
 });
+
+if (elBtnToggleAcc) {
+    elBtnToggleAcc.addEventListener('click', () => {
+        sendControlCommand({ acc_enabled: !accEnabled });
+    });
+}
+
+if (elBtnAccDown) {
+    elBtnAccDown.addEventListener('click', () => {
+        const nextSpd = Math.max(30, accSetSpeed - 5);
+        sendControlCommand({ acc_set_speed: nextSpd });
+    });
+}
+
+if (elBtnAccUp) {
+    elBtnAccUp.addEventListener('click', () => {
+        const nextSpd = Math.min(130, accSetSpeed + 5);
+        sendControlCommand({ acc_set_speed: nextSpd });
+    });
+}
 
 elBtnSpawnBump.addEventListener('click', () => {
     sendControlCommand({ spawn_obstacle: 'Tumsek' });
