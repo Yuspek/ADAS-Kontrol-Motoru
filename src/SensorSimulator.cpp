@@ -1,5 +1,5 @@
-#include "SensorSimulator.hpp"
-#include "Logger.hpp"
+#include "../include/SensorSimulator.hpp"
+#include "../include/Logger.hpp"
 #include <cmath>
 
 /**

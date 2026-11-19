@@ -1,7 +1,6 @@
-#include "SensorSimulator.hpp"
-#include "AdasController.hpp"
-#include "NetworkServer.hpp"
-#include "Logger.hpp"
+#include "../include/SensorSimulator.hpp"
+#include "../include/AdasController.hpp"
+#include "../include/NetworkServer.hpp"
 
 #include <iostream>
 #include <chrono>

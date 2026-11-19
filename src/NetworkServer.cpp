@@ -1,7 +1,7 @@
-#include "NetworkServer.hpp"
-#include "Logger.hpp"
-#include "httplib.h"
-#include "json.hpp"
+#include "../include/NetworkServer.hpp"
+#include "../include/Logger.hpp"
+#include "../include/httplib.h"
+#include "../include/json.hpp"
 #include <filesystem>
 
 /**
