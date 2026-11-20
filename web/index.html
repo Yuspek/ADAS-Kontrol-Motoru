@@ -1,300 +1,157 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ADAS SIL Karar Motoru</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADAS v2.0 — Dijital Kokpit</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="cockpit-wrapper">
+    <!-- ÜST SİNYAL VE BAĞLANTI ÇUBUĞU -->
+    <header class="top-bar">
+      <div class="signal-arrow" id="sigLeft">◀</div>
+      <div class="top-status">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">BAĞLANIYOR...</span>
+        <span class="sep">|</span>
+        <span>SÜSPANSİYON: <strong id="suspText">%50 Normal</strong></span>
+      </div>
+      <div class="signal-arrow" id="sigRight">▶</div>
+    </header>
 
-    <div class="app-container">
+    <!-- ANA DİJİTAL KADRAN (ESKİZ YERLEŞİMİ) -->
+    <main class="cluster-grid">
+      <!-- EN SOL: YAKIT BARI -->
+      <section class="side-bar-panel">
+        <div class="bar-label">YAKIT</div>
+        <div class="bar-icon">⛽</div>
+        <div class="segmented-bar" id="fuelBar"></div>
+        <div class="bar-value" id="fuelVal">85%</div>
+      </section>
 
-        <!-- Üst kısım -->
-        <header class="app-header">
-            <div class="brand">
-                <div class="logo-icon"></div>
-                <div>
-                    <h1>ADAS SIL KARAR MOTORU <span>v2.0</span></h1>
-                    <p class="subtitle">Otonom Sürüş Karar Destek Sistemi</p>
-                </div>
-            </div>
+      <!-- SOL: HIZ KADRANI -->
+      <section class="gauge-panel">
+        <div class="gauge-title">HIZ</div>
+        <div class="gauge-container">
+          <svg viewBox="0 0 260 260" class="gauge-svg">
+            <defs>
+              <linearGradient id="speedGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00e5ff" />
+                <stop offset="70%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#ef4444" />
+              </linearGradient>
+            </defs>
+            <circle cx="130" cy="130" r="115" class="gauge-outer-ring" />
+            <circle cx="130" cy="130" r="102" class="gauge-track" stroke-dasharray="480 641" stroke-dashoffset="0" transform="rotate(135 130 130)" />
+            <circle cx="130" cy="130" r="102" id="speedArc" class="gauge-progress" stroke="url(#speedGrad)" stroke-dasharray="0 641" transform="rotate(135 130 130)" />
+            <g id="speedTicks"></g>
+            <!-- Dinamik Hız Limiti (TSR) İşaretçisi -->
+            <g id="tsrMarker">
+              <circle cx="130" cy="130" r="14" class="tsr-circle" />
+              <text x="130" y="134" text-anchor="middle" class="tsr-text" id="tsrVal">70</text>
+            </g>
+            <circle cx="130" cy="130" r="64" class="gauge-inner-ring" />
+          </svg>
+          <div class="gauge-center">
+            <div class="digital-speed" id="digitalSpeed">0</div>
+            <div class="unit-label">km/h</div>
+            <div class="acc-mini" id="accMini">ACC: KAPALI</div>
+          </div>
+        </div>
+      </section>
 
-            <div class="connection-status" id="connectionBadge">
-                <span class="pulse-dot"></span>
-                <span id="connectionText">BAĞLANTI BEKLENİYOR</span>
-            </div>
-        </header>
+      <!-- ORTA: AKSİYON KAMERASI + UYARI PANELİ -->
+      <section class="center-panel">
+        <div class="camera-box" id="cameraBox">
+          <div class="box-header amber">AKSİYON KAMERASI</div>
+          <canvas id="actionCam" width="460" height="220"></canvas>
+          <div class="cam-overlay-info">
+            <span id="radarBadge">RADAR: 55.0 m</span>
+            <span id="ttcBadge">TTC: --</span>
+          </div>
+        </div>
 
-        <!-- Gösterge panelleri -->
-        <main class="dashboard-grid">
+        <div class="alert-box" id="alertBox">
+          <div class="box-header cyan">UYARI</div>
+          <div class="alert-message" id="alertMessage">SİSTEM NORMAL — GÜVENLİ SÜRÜŞ</div>
+          <div class="adas-pills">
+            <span class="pill" id="pillAcc">ACC</span>
+            <span class="pill" id="pillLdw">LDW</span>
+            <span class="pill" id="pillAeb">AEB</span>
+            <span class="pill" id="pillTsr">TSR</span>
+          </div>
+        </div>
+      </section>
 
-            <!-- Hız ve trafik işareti -->
-            <section class="card tsr-card">
-                <div class="card-header">
-                    <h2><span class="icon">speedometer</span> HIZ VE TRAFİK İŞARETİ (TSR)</h2>
-                    <span class="badge" id="speedBadge">NORMAL</span>
-                </div>
+      <!-- SAĞ: DEVİR & VİTES KADRANI -->
+      <section class="gauge-panel">
+        <div class="gauge-title">DEVİR</div>
+        <div class="gauge-container">
+          <svg viewBox="0 0 260 260" class="gauge-svg">
+            <defs>
+              <linearGradient id="rpmGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00e5ff" />
+                <stop offset="65%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#ef4444" />
+              </linearGradient>
+            </defs>
+            <circle cx="130" cy="130" r="115" class="gauge-outer-ring" />
+            <circle cx="130" cy="130" r="102" class="gauge-track" stroke-dasharray="480 641" transform="rotate(135 130 130)" />
+            <circle cx="130" cy="130" r="102" id="rpmArc" class="gauge-progress" stroke="url(#rpmGrad)" stroke-dasharray="0 641" transform="rotate(135 130 130)" />
+            <g id="rpmTicks"></g>
+            <circle cx="130" cy="130" r="64" class="gauge-inner-ring" />
+          </svg>
+          <div class="gauge-center">
+            <div class="digital-gear" id="activeGear">D</div>
+            <div class="unit-label">x1000 RPM</div>
+          </div>
+        </div>
+        <div class="gear-row">
+          <span class="gear-item active" data-gear="D">D</span>
+          <span class="gear-sep">-</span>
+          <span class="gear-item" data-gear="N">N</span>
+          <span class="gear-sep">-</span>
+          <span class="gear-item" data-gear="R">R</span>
+          <span class="gear-sep">-</span>
+          <span class="gear-item" data-gear="P">P</span>
+        </div>
+      </section>
 
-                <div class="card-body speed-body">
-                    <div class="gauge-container">
-                        <div class="speed-digital">
-                            <span id="speedVal">00.0</span>
-                            <span class="unit">KM/H</span>
-                        </div>
+      <!-- EN SAĞ: SICAKLIK BARI -->
+      <section class="side-bar-panel">
+        <div class="bar-label">SICAKLIK</div>
+        <div class="bar-icon">🌡️</div>
+        <div class="segmented-bar" id="tempBar"></div>
+        <div class="bar-value" id="tempVal">90°C</div>
+      </section>
+    </main>
 
-                        <div class="speed-bar-outer">
-                            <div class="speed-bar-inner" id="speedBar" style="width: 0%;"></div>
-                        </div>
-                    </div>
+    <!-- ALT KONTROL VE TERMİNAL ŞERİDİ -->
+    <footer class="bottom-deck">
+      <div class="controls-bar">
+        <button id="btnAcc" class="ctrl-btn cyan">ACC Aç/Kapat (C)</button>
+        <button id="btnAccDown" class="ctrl-btn">ACC -5</button>
+        <button id="btnAccUp" class="ctrl-btn">ACC +5</button>
+        <button id="btnPothole" class="ctrl-btn amber">Çukur Oluştur</button>
+        <button id="btnBump" class="ctrl-btn amber">Tümsek Oluştur</button>
+        <button id="btnSpeedLimit" class="ctrl-btn">Hız Sınırı Değiştir</button>
+        <button id="btnReset" class="ctrl-btn red">Sıfırla</button>
+      </div>
+      <div class="hints">
+        <span><b>W / ↑</b> Gaz</span>
+        <span><b>SPACE</b> Fren</span>
+        <span><b>A / Q</b> Sol Sinyal</span>
+        <span><b>D / E</b> Sağ Sinyal</span>
+        <span><b>C</b> ACC</span>
+        <span><b>+ / -</b> ACC Hız</span>
+      </div>
+      <div class="terminal-box" id="terminalLogs">
+        <div class="log-line">[SİSTEM] Telemetri bekleniyor...</div>
+      </div>
+    </footer>
+  </div>
 
-                    <div class="tsr-sign-container">
-                        <div class="tsr-sign" id="tsrSign">
-                            <span id="tsrVal">70</span>
-                        </div>
-                        <span class="tsr-label">HIZ SINIRI</span>
-                    </div>
-                </div>
-
-                <div class="warning-banner hidden" id="speedWarningBanner">
-                    HIZ SINIRI AŞILDI! (+<span id="overshootVal">0</span> KM/H)
-                </div>
-            </section>
-
-            <!-- Çarpışma önleme sistemi -->
-            <section class="card aeb-card">
-                <div class="card-header">
-                    <h2><span class="icon">radar</span> AEB ÇARPIŞMA ÖNLEME</h2>
-                    <span class="badge" id="aebStatusBadge">GÜVENLİ</span>
-                </div>
-
-                <div class="card-body">
-                    <div class="metric-row">
-                        <div class="metric-box">
-                            <span class="label">RADAR MESAFESİ</span>
-                            <div class="val-group">
-                                <span class="val" id="radarVal">45.0</span>
-                                <span class="unit">m</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-box">
-                            <span class="label">AEB KRİTİK MESAFESİ</span>
-                            <div class="val-group">
-                                <span class="val">15.0</span>
-                                <span class="unit">m</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="radar-visual">
-                        <div class="radar-car player-car" id="playerCar"></div>
-                        <div class="radar-track">
-                            <div class="radar-line" id="radarLine" style="width: 50%;"></div>
-                        </div>
-                        <div class="radar-car lead-car" id="leadCar"></div>
-                    </div>
-
-                    <div class="aeb-alert-banner hidden" id="aebAlert">
-                        ACİL FREN SİSTEMİ (AEB) DEVREDE!
-                    </div>
-
-                    <div class="override-alert-banner hidden" id="overrideAlert">
-                        SÜRÜCÜNÜN GAZ KOMUTU ENGELLENDİ!
-                    </div>
-                </div>
-            </section>
-
-            <!-- Adaptif Hız Sabitleyici (ACC) -->
-            <section class="card acc-card">
-                <div class="card-header">
-                    <h2><span class="icon">tune</span> ADAPTİF HIZ SABİTLEYİCİ (ACC)</h2>
-                    <span class="badge" id="accStatusBadge">KAPALI</span>
-                </div>
-
-                <div class="card-body">
-                    <div class="metric-row">
-                        <div class="metric-box">
-                            <span class="label">ACC HEDEF HIZ</span>
-                            <div class="val-group">
-                                <span class="val" id="accSetSpeedVal">70</span>
-                                <span class="unit">KM/H</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-box">
-                            <span class="label">GÜVENLİ TAKİP MESAFESİ</span>
-                            <div class="val-group">
-                                <span class="val" id="accSafeDistVal">37.0</span>
-                                <span class="unit">m</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="acc-mode-box">
-                        <span class="label">KONTROL DURUMU</span>
-                        <div class="acc-mode-text" id="accModeVal">KAPALI</div>
-                    </div>
-
-                    <div class="acc-demand-row">
-                        <div class="acc-demand-item">
-                            <span class="demand-label">OTONOM GAZ: <strong id="accThrottleVal">%0</strong></span>
-                            <div class="demand-bar-outer"><div class="demand-bar-inner gas" id="accThrottleBar" style="width: 0%;"></div></div>
-                        </div>
-                        <div class="acc-demand-item">
-                            <span class="demand-label">OTONOM FREN: <strong id="accBrakeVal">%0</strong></span>
-                            <div class="demand-bar-outer"><div class="demand-bar-inner brake" id="accBrakeBar" style="width: 0%;"></div></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Süspansiyon sistemi -->
-            <section class="card suspension-card">
-                <div class="card-header">
-                    <h2><span class="icon">tune</span> AKTİF SÜSPANSİYON</h2>
-                    <span class="badge" id="suspBadge">STANDART</span>
-                </div>
-
-                <div class="card-body">
-                    <div class="suspension-metrics">
-                        <div class="susp-box">
-                            <span class="label">YOL ENGELİ</span>
-                            <span class="susp-val" id="obstacleTypeVal">Yok</span>
-                        </div>
-
-                        <div class="susp-box">
-                            <span class="label">ENGEL MESAFESİ</span>
-                            <span class="susp-val" id="obstacleDistVal">-- m</span>
-                        </div>
-                    </div>
-
-                    <div class="stiffness-meter-container">
-                        <div class="stiffness-label-row">
-                            <span>%20 (Yumuşak - Çukur)</span>
-                            <span>%50</span>
-                            <span>%80 (Sert - Tümsek)</span>
-                        </div>
-
-                        <div class="stiffness-bar-outer">
-                            <div class="stiffness-bar-inner" id="suspStiffnessBar" style="width: 50%;"></div>
-                        </div>
-
-                        <div class="stiffness-readout">
-                            SERTLİK: <strong id="suspStiffnessPct">50%</strong>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Şerit takip sistemi -->
-            <section class="card ldw-card">
-                <div class="card-header">
-                    <h2><span class="icon">alt_route</span> ŞERİT TAKİP VE SİNYAL (LDW)</h2>
-                    <span class="badge" id="ldwBadge">ŞERİT İÇİ</span>
-                </div>
-
-                <div class="card-body">
-                    <div class="signals-bar">
-                        <button class="signal-btn" id="btnLeftSignal">
-                            SOL SİNYAL (A / Q)
-                        </button>
-
-                        <button class="signal-btn" id="btnRightSignal">
-                            SAĞ SİNYAL (D / E)
-                        </button>
-                    </div>
-
-                    <div class="lane-visualizer">
-                        <div class="lane-line left-line"></div>
-                        <div class="lane-car" id="laneCar" style="transform: translateX(0px);"></div>
-                        <div class="lane-line right-line"></div>
-                    </div>
-
-                    <div class="lane-readout">
-                        ŞERİT SAPMASI: <strong id="laneOffsetVal">0.00 m</strong>
-                    </div>
-
-                    <div class="ldw-banner warning hidden" id="ldwWarningBanner">
-                        ŞERİT İHLALİ UYARISI!
-                    </div>
-
-                    <div class="ldw-banner suppressed hidden" id="ldwSuppressedBanner">
-                        SİNYAL AÇIK - ŞERİT DEĞİŞTİRİLİYOR
-                    </div>
-                </div>
-            </section>
-
-        </main>
-
-        <!-- Kontrol paneli -->
-        <section class="control-deck">
-            <div class="deck-title">SÜRÜCÜ VE SİMÜLASYON KONTROL PANELİ</div>
-
-            <div class="control-buttons">
-                <button class="ctrl-btn gas-btn" id="btnGas">
-                    <span class="btn-icon"></span>
-                    <span class="btn-text">GAZ PEDALI (W TUŞUNA BASILI TUT)</span>
-                </button>
-
-                <div class="btn-group">
-                    <button class="ctrl-btn acc-toggle-btn" id="btnToggleAcc">
-                        ACC: KAPALI
-                    </button>
-                    <button class="ctrl-btn action-btn small-btn" id="btnAccDown">-5 km/s</button>
-                    <button class="ctrl-btn action-btn small-btn" id="btnAccUp">+5 km/s</button>
-                    <button class="ctrl-btn action-btn" id="btnSpawnPothole">
-                        Çukur Oluştur
-                    </button>
-
-                    <button class="ctrl-btn action-btn" id="btnSpawnBump">
-                        Tümsek Oluştur
-                    </button>
-
-                    <button class="ctrl-btn action-btn" id="btnToggleSpeedLimit">
-                        Hız Sınırını Değiştir
-                    </button>
-
-                    <button class="ctrl-btn reset-btn" id="btnReset">
-                        Sıfırla
-                    </button>
-                </div>
-            </div>
-
-            <div class="keyboard-hints">
-                Klavye Kısayolları:
-                <strong>W</strong> (Gaz),
-                <strong>A / D</strong> (Sinyal),
-                <strong>SPACE</strong> (Fren),
-                <strong>C</strong> (ACC Aç/Kapa),
-                <strong>+ / -</strong> (ACC Hız Ayarı)
-            </div>
-        </section>
-
-        <!-- Sistem kayıtları -->
-        <section class="terminal-card">
-            <div class="terminal-header">
-                <span>SYSTEM_LOG.TXT CANLI AKIŞI</span>
-                <span class="terminal-dot"></span>
-            </div>
-
-            <div class="terminal-body" id="logTerminal">
-                <div class="log-line system">
-                    [SYSTEM] Karar motoru başlatılmayı bekliyor...
-                </div>
-            </div>
-        </section>
-
-    </div>
-
-    <script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
